@@ -1,0 +1,3 @@
+install vscode
+install python, html, js, 
+pip install flask pycryptodome
