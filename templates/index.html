@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Secure Encrypt & Decrypt</title>
 
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap CSS for responsive styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        /* Page styling */
         body {
             background-color: #f8f9fa;
         }
@@ -43,15 +44,13 @@
     <div class="container text-center">
         <h2 class="mb-4">Secure Encrypt & Decrypt</h2>
 
-        <!-- Choice Buttons -->
+        <!-- Action selection buttons -->
         <div class="mb-3">
             <button id="encryptChoice" class="btn btn-primary">Encrypt Data</button>
             <button id="decryptChoice" class="btn btn-secondary">Decrypt Data</button>
         </div>
 
-        <!-- Encryption Section -->
-        <!-- Encryption Section -->
-        <!-- Encryption Section -->
+        <!-- Encryption block -->
         <div class="card p-3 hidden" id="encryptBlock">
             <label for="encryptData" class="form-label">Enter Text to Encrypt</label>
             <textarea class="form-control mb-2" id="encryptData" rows="3" placeholder="Type here"></textarea>
@@ -59,13 +58,43 @@
             <label class="form-label">Or Upload a File</label>
             <input type="file" class="form-control mb-2" id="encryptFile">
 
-            <button id="encryptSubmit" class="btn btn-success">Encrypt</button>
+            <label class="form-label mt-3">Select Encryption Shields:</label><br>
+
+            <!-- Encryption shield options -->
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="aes" id="shieldAES">
+                <label class="form-check-label" for="shieldAES">Shield 1</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="rsa" id="shieldRSA">
+                <label class="form-check-label" for="shieldRSA">Shield 2</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="xor" id="shieldXOR">
+                <label class="form-check-label" for="shieldXOR">Shield 3</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="caesar" id="shieldCaesar">
+                <label class="form-check-label" for="shieldCaesar">Shield 4</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="base64" id="shieldBase64">
+                <label class="form-check-label" for="shieldBase64">Shield 5</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="reverse" id="shieldReverse">
+                <label class="form-check-label" for="shieldReverse">Shield 6</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="vigenere" id="shieldVigenere">
+                <label class="form-check-label" for="shieldVigenere">Shield 7</label>
+            </div>
+
+            <!-- Encrypt button -->
+            <button id="encryptSubmit" class="btn btn-success mt-3">Encrypt</button>
         </div>
 
-
-
-        <!-- Decryption Section -->
-        <!-- Decryption Section -->
+        <!-- Decryption block -->
         <div class="card p-3 hidden" id="decryptBlock">
             <label for="decryptData" class="form-label">Enter Encrypted Text</label>
             <textarea class="form-control mb-2" id="decryptData" rows="3" placeholder="Type here"></textarea>
@@ -73,12 +102,46 @@
             <label class="form-label">Or Upload a File</label>
             <input type="file" class="form-control mb-2" id="decryptFile">
 
-            <button id="decryptSubmit" class="btn btn-danger">Decrypt</button>
+            <label class="form-label mt-3">Select Decryption Shields (in reverse order):</label><br>
+
+            <!-- Decryption shield options -->
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="vigenere" id="dshieldVigenere">
+                <label class="form-check-label" for="dshieldVigenere">Shield 7</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="reverse" id="dshieldReverse">
+                <label class="form-check-label" for="dshieldReverse">Shield 6</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="base64" id="dshieldBase64">
+                <label class="form-check-label" for="dshieldBase64">Shield 5</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="caesar" id="dshieldCaesar">
+                <label class="form-check-label" for="dshieldCaesar">Shield 4</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="xor" id="dshieldXOR">
+                <label class="form-check-label" for="dshieldXOR">Shield 3</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="rsa" id="dshieldRSA">
+                <label class="form-check-label" for="dshieldRSA">Shield 2</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="aes" id="dshieldAES">
+                <label class="form-check-label" for="dshieldAES">Shield 1</label>
+            </div>
+
+            <!-- Decrypt button -->
+            <button id="decryptSubmit" class="btn btn-danger mt-3">Decrypt</button>
         </div>
 
-        <!-- Bootstrap JS -->
+        <!-- Bootstrap JS for interactivity -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+        <!-- Toggle visibility between encryption and decryption sections -->
         <script>
             document.getElementById("encryptChoice").addEventListener("click", function () {
                 document.getElementById("encryptBlock").classList.remove("hidden");
@@ -90,6 +153,8 @@
                 document.getElementById("encryptBlock").classList.add("hidden");
             });
         </script>
+
+        <!-- Custom script file -->
         <script src="/static/style.js"></script>
 </body>
 

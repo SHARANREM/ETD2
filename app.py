@@ -8,6 +8,11 @@ import base64
 import os
 
 app = Flask(__name__)
+# Generate RSA keys once and reuse them
+rsa_key = RSA.generate(2048)
+private_key = rsa_key
+public_key = rsa_key.publickey()
+
 
 # Secure key derivation using PBKDF2 for AES
 SALT_SIZE = 16
@@ -65,6 +70,42 @@ def xor_decrypt(encrypted_text, xor_key):
     decrypted_text = ''.join(chr(ord(c) ^ xor_key) for c in encrypted_data)
     return decrypted_text
 
+# Caesar Cipher
+def caesar_encrypt(text, shift=3):
+    encrypted = ''.join(chr((ord(char) + shift) % 256) for char in text)
+    return base64.b64encode(encrypted.encode()).decode()
+
+def caesar_decrypt(text, shift=3):
+    decrypted = base64.b64decode(text).decode()
+    return ''.join(chr((ord(char) - shift) % 256) for char in decrypted)
+
+# Base64 Encode/Decode
+def base64_encrypt(text):
+    return base64.b64encode(text.encode()).decode()
+
+def base64_decrypt(text):
+    return base64.b64decode(text).decode()
+
+# Reverse Cipher
+def reverse_encrypt(text):
+    return text[::-1]
+
+def reverse_decrypt(text):
+    return text[::-1]
+
+# Vigenère Cipher
+def vigenere_encrypt(text, key):
+    key = (key * (len(text) // len(key) + 1))[:len(text)]
+    encrypted = ''.join(chr((ord(c) + ord(k)) % 256) for c, k in zip(text, key))
+    return base64.b64encode(encrypted.encode()).decode()
+
+def vigenere_decrypt(text, key):
+    decoded = base64.b64decode(text).decode()
+    key = (key * (len(decoded) // len(key) + 1))[:len(decoded)]
+    decrypted = ''.join(chr((ord(c) - ord(k)) % 256) for c, k in zip(decoded, key))
+    return decrypted
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -73,42 +114,65 @@ def index():
 def encrypt():
     data = request.json['text']
     password = request.json['password']
-    algorithm = request.json.get('algorithm', 'aes')  # Default to AES if no algorithm is specified
+    xor_key = int(request.json.get('xor_key', 0))
+    algorithms = request.json.get('algorithms', [])
 
-    if algorithm == 'aes':
-        encrypted_text = encrypt_data(data, password)
-    elif algorithm == 'rsa':
-        # Generate RSA keys if needed
-        key = RSA.generate(2048)
-        public_key = key.publickey()
-        encrypted_text = rsa_encrypt(data, public_key)
-    elif algorithm == 'xor':
-        xor_key = int(request.json['xor_key'])  # XOR key should be provided
-        encrypted_text = xor_encrypt(data, xor_key)
-    else:
-        return jsonify({'error': 'Unknown algorithm'}), 400
+    encrypted = data
+    # Use the pre-generated public key (do not re-generate)
+    for algo in algorithms:
+        if algo == 'aes':
+            encrypted = encrypt_data(encrypted, password)
+        elif algo == 'rsa':
+            encrypted = rsa_encrypt(encrypted, public_key)
+        elif algo == 'xor':
+            encrypted = xor_encrypt(encrypted, xor_key)
+        elif algo == 'caesar':
+            encrypted = caesar_encrypt(encrypted)
+        elif algo == 'base64':
+            encrypted = base64_encrypt(encrypted)
+        elif algo == 'reverse':
+            encrypted = reverse_encrypt(encrypted)
+        elif algo == 'vigenere':
+            encrypted = vigenere_encrypt(encrypted, password)
 
-    return jsonify({'encrypted_text': encrypted_text})
+        else:
+            return jsonify({'error': 'Unknown algorithm'}), 400
+
+    return jsonify({'encrypted_text': encrypted})
 
 @app.route('/decrypt', methods=['POST'])
 def decrypt():
-    encrypted_text = request.json['text']
+    encrypted = request.json['text']
     password = request.json['password']
-    algorithm = request.json.get('algorithm', 'aes')  # Default to AES if no algorithm is specified
+    xor_key = int(request.json.get('xor_key', 0))
+    algorithms = request.json.get('algorithms', [])
 
-    if algorithm == 'aes':
-        decrypted_text = decrypt_data(encrypted_text, password)
-    elif algorithm == 'rsa':
-        # RSA private key should be provided for decryption
-        private_key = RSA.import_key(password)  # Assuming 'password' is the private key
-        decrypted_text = rsa_decrypt(encrypted_text, private_key)
-    elif algorithm == 'xor':
-        xor_key = int(request.json['xor_key'])  # XOR key should be provided
-        decrypted_text = xor_decrypt(encrypted_text, xor_key)
-    else:
-        return jsonify({'error': 'Unknown algorithm'}), 400
+    decrypted = encrypted
 
-    return jsonify({'decrypted_text': decrypted_text})
+    for algo in reversed(algorithms):
+        if algo == 'aes':
+            decrypted = decrypt_data(decrypted, password)
+        elif algo == 'rsa':
+            decrypted = rsa_decrypt(decrypted, private_key)
+        elif algo == 'xor':
+            decrypted = xor_decrypt(decrypted, xor_key)
+        elif algo == 'caesar':
+            decrypted = caesar_decrypt(decrypted)
+        elif algo == 'base64':
+            decrypted = base64_decrypt(decrypted)
+        elif algo == 'reverse':
+            decrypted = reverse_decrypt(decrypted)
+        elif algo == 'vigenere':
+            decrypted = vigenere_decrypt(decrypted, password)
+
+        else:
+            return jsonify({'error': 'Unknown algorithm'}), 400
+
+        if decrypted == "Invalid Key or Data!":
+            break
+
+    return jsonify({'decrypted_text': decrypted})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
