@@ -13,16 +13,18 @@ rsa_key = RSA.generate(2048)
 private_key = rsa_key
 public_key = rsa_key.publickey()
 
-
 # Secure key derivation using PBKDF2 for AES
 SALT_SIZE = 16
 KEY_SIZE = 32
 ITERATIONS = 100000
 
 # Encrypt data using AES-256 (GCM mode for security)
-def encrypt_data(text, password):
+def encrypt_data(text, passphrase):
+    if len(passphrase) < 24:
+        return "Passphrase must be at least 24 characters long."
+
     salt = get_random_bytes(SALT_SIZE)
-    key = PBKDF2(password, salt, dkLen=KEY_SIZE, count=ITERATIONS)
+    key = PBKDF2(passphrase, salt, dkLen=KEY_SIZE, count=ITERATIONS)
     cipher = AES.new(key, AES.MODE_GCM)
     ciphertext, tag = cipher.encrypt_and_digest(text.encode())
 
@@ -30,12 +32,15 @@ def encrypt_data(text, password):
     return encrypted_payload
 
 # Decrypt data using AES-256
-def decrypt_data(encrypted_text, password):
+def decrypt_data(encrypted_text, passphrase):
+    if len(passphrase) < 24:
+        return "Passphrase must be at least 24 characters long."
+
     try:
         data = base64.b64decode(encrypted_text)
         salt, nonce, tag, ciphertext = data[:SALT_SIZE], data[SALT_SIZE:SALT_SIZE+16], data[SALT_SIZE+16:SALT_SIZE+32], data[SALT_SIZE+32:]
 
-        key = PBKDF2(password, salt, dkLen=KEY_SIZE, count=ITERATIONS)
+        key = PBKDF2(passphrase, salt, dkLen=KEY_SIZE, count=ITERATIONS)
         cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
         decrypted_text = cipher.decrypt_and_verify(ciphertext, tag).decode()
 
@@ -105,7 +110,6 @@ def vigenere_decrypt(text, key):
     decrypted = ''.join(chr((ord(c) - ord(k)) % 256) for c, k in zip(decoded, key))
     return decrypted
 
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -113,15 +117,18 @@ def index():
 @app.route('/encrypt', methods=['POST'])
 def encrypt():
     data = request.json['text']
-    password = request.json['password']
+    passphrase = request.json['password']
     xor_key = int(request.json.get('xor_key', 0))
     algorithms = request.json.get('algorithms', [])
 
+    # Check passphrase length if AES or Vigenère is selected
+    if ('aes' in algorithms or 'vigenere' in algorithms) and len(passphrase) < 24:
+        return jsonify({'error': 'Passphrase must be at least 24 characters long.'}), 400
+
     encrypted = data
-    # Use the pre-generated public key (do not re-generate)
     for algo in algorithms:
         if algo == 'aes':
-            encrypted = encrypt_data(encrypted, password)
+            encrypted = encrypt_data(encrypted, passphrase)
         elif algo == 'rsa':
             encrypted = rsa_encrypt(encrypted, public_key)
         elif algo == 'xor':
@@ -133,8 +140,7 @@ def encrypt():
         elif algo == 'reverse':
             encrypted = reverse_encrypt(encrypted)
         elif algo == 'vigenere':
-            encrypted = vigenere_encrypt(encrypted, password)
-
+            encrypted = vigenere_encrypt(encrypted, passphrase)
         else:
             return jsonify({'error': 'Unknown algorithm'}), 400
 
@@ -143,15 +149,18 @@ def encrypt():
 @app.route('/decrypt', methods=['POST'])
 def decrypt():
     encrypted = request.json['text']
-    password = request.json['password']
+    passphrase = request.json['password']
     xor_key = int(request.json.get('xor_key', 0))
     algorithms = request.json.get('algorithms', [])
 
-    decrypted = encrypted
+    # Check passphrase length if AES or Vigenère is selected
+    if ('aes' in algorithms or 'vigenere' in algorithms) and len(passphrase) < 24:
+        return jsonify({'error': 'Passphrase must be at least 24 characters long.'}), 400
 
+    decrypted = encrypted
     for algo in reversed(algorithms):
         if algo == 'aes':
-            decrypted = decrypt_data(decrypted, password)
+            decrypted = decrypt_data(decrypted, passphrase)
         elif algo == 'rsa':
             decrypted = rsa_decrypt(decrypted, private_key)
         elif algo == 'xor':
@@ -163,16 +172,11 @@ def decrypt():
         elif algo == 'reverse':
             decrypted = reverse_decrypt(decrypted)
         elif algo == 'vigenere':
-            decrypted = vigenere_decrypt(decrypted, password)
-
+            decrypted = vigenere_decrypt(decrypted, passphrase)
         else:
             return jsonify({'error': 'Unknown algorithm'}), 400
 
-        if decrypted == "Invalid Key or Data!":
-            break
-
     return jsonify({'decrypted_text': decrypted})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
