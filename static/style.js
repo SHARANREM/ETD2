@@ -61,6 +61,12 @@ async function encryptText(text, payload) {
 
     const data = await response.json();
 
+    // Check for error response from server
+    if (!response.ok || data.error) {
+        alert(data.error || "Encryption failed due to an unknown error.");
+        return;
+    }
+
     // Download encrypted text as a file
     const blob = new Blob([data.encrypted_text], { type: "text/plain" });
     const link = document.createElement("a");
@@ -70,6 +76,7 @@ async function encryptText(text, payload) {
     link.click();
     document.body.removeChild(link);
 }
+
 
 // Handle decryption submit button click
 document.getElementById("decryptSubmit").addEventListener("click", async function () {
